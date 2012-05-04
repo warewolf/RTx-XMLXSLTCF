@@ -1,0 +1,73 @@
+<%once>
+use XML::LibXML;
+use XML::LibXSLT;
+use URI::Escape;
+
+my $parser = XML::LibXML->new({
+  no_network => 1,
+  load_ext_dtd => 0,
+  expand_entities => 0,
+  expand_xinclude => 0,
+  ext_ent_handler => sub {
+      # my ($sys_id, $pub_id) = @_;
+      # warn "Received external entity: $sys_id:$pub_id";
+      "";
+    },
+  }
+); 
+
+sub xslt_uri_escape {
+  my $uri = shift;
+  return uri_escape($uri);
+}
+
+XML::LibXSLT->register_function('urn:uri','escape-uri', \&xslt_uri_escape);
+
+my $xslt = XML::LibXSLT->new();
+
+</%once>
+<%init>
+my $cf = $Object->CustomFieldObj();
+
+my $xml_txt = $Object->LargeContent || $Object->Content;
+
+my $xsl_txt = $cf->FirstAttribute('XSL') or undef;
+$xsl_txt =  $xsl_txt->Content;
+
+
+my ($xsl_doc,$xml_doc);
+my $content;
+
+eval {
+  $xsl_doc = $parser->load_xml(string => $xsl_txt);
+};
+
+if ($@) {
+  $content.= "xsl doc error ($@)\n";
+}
+
+eval {
+  $xml_doc  = $parser->load_xml(string => $xml_txt);
+};
+if ($@) {
+  $content.= "xml doc error ($@)\n";
+}
+
+my $stylesheet = $xslt->parse_stylesheet($xsl_doc);
+
+my ($transformed_xml_doc);
+
+eval {
+  $transformed_xml_doc = $stylesheet->transform($xml_doc,RT->Config->Get("XMLXSLTCFParameters"));
+  $content = $stylesheet->output_as_bytes($transformed_xml_doc);
+};
+
+if ($@) {
+  $content .= "XML Error: ($@)\n";
+}
+</%init>
+<%$content|n%>
+<%ARGS>
+$Object => undef
+</%ARGS>
+

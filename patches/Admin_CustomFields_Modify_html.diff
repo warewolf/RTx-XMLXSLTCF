@@ -1,0 +1,26 @@
+diff -urN rt-orig/share/html/Admin/CustomFields/Modify.html rt-patched/share/html/Admin/CustomFields/Modify.html
+--- rt-orig/share/html/Admin/CustomFields/Modify.html	2011-06-16 12:53:35.000000000 -0400
++++ rt-patched/share/html/Admin/CustomFields/Modify.html	2011-06-16 12:55:34.000000000 -0400
+@@ -126,6 +126,7 @@
+ 
+ </table>
+ 
++% $m->callback(CallbackName => 'EditUserDefinedCustomField', CustomField => $CustomFieldObj);
+ % if ( $CustomFieldObj->Id && $CustomFieldObj->IsSelectionType && !$CustomFieldObj->IsExternalValues ) {
+ <h2><&|/l&>Values</&></h2>
+ <div>
+@@ -175,7 +176,7 @@
+     #we're asking about enabled on the web page but really care about disabled.
+     $ARGS{'Disabled'} = $Disabled = $Enabled? 0 : 1;
+ 
+-    my @attribs = qw(Disabled Pattern Name TypeComposite LookupType Description LinkValueTo IncludeContentForValue);
++    my @attribs = qw(Disabled Pattern Name TypeComposite LookupType Description LinkValueTo IncludeContentForValue XSL);
+     push @results, UpdateRecordObject(
+         AttributesRef => \@attribs,
+         Object        => $CustomFieldObj,
+@@ -250,4 +251,5 @@
+ $LinkValueTo => undef
+ $IncludeContentForValue => undef
+ $BasedOn => undef
++$XSL => undef
+ </%ARGS>

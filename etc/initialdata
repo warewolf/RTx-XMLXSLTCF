@@ -1,0 +1,73 @@
+# vim: filetype=perl foldmethod=marker
+
+@ScripActions = (
+# {{{
+    {  Name        => '010 Import Arcsight Event XML',
+       Description => 'Import Arcsight Event XML into ArcsightXML CustomField' ,
+       ExecModule => 'ArcsightImport',
+    },
+# }}}
+# {{{
+    {  Name        => '020 Extract Arcsight Event Details',
+       Description => 'Extract Arcsight Event Details' ,
+       ExecModule => 'ArcsightExtract',
+    },
+# }}}
+);
+
+@ScripConditions = (
+# {{{
+    { Name                 => 'On Arcsight Event',
+      Description          => 'When Arcsight Event data is received',
+      ApplicableTransTypes => 'Create',
+      ExecModule           => 'ArcsightImport', },
+# }}}
+);
+
+@Scrips = (
+# {{{
+    {  Description       => "010 Import Arcsight Event Data on new Arcsight event",
+       Queue             => 'Incident Reports',
+       ScripCondition    => 'On Arcsight Event',
+       ScripAction       => '010 Import Arcsight Event XML',
+       Template          => 'Blank' },
+# }}}
+# {{{
+    {  Description       => "020 Extract Arcsight Event Data on new Arcsight event",
+       Queue             => 'Incident Reports',
+       ScripCondition    => 'On Arcsight Event',
+       ScripAction       => '020 Extract Arcsight Event Details',
+       Template          => 'Blank' },
+# }}}
+);
+
+@CustomFields = (
+    { #{{{
+        Name        => 'ArcsightXML',
+        Type        => 'XSL',
+	Queue       => 'Incident Reports',
+# So, it looks like before RT 3.8.9 (before commit e4e90f46bee6ff3ce1263ae78cb4b8e01e19ea23)
+# there was a bug that prevented assigning CFs to Transactions.
+	LookupType  => 'RT::Queue-RT::Ticket-RT::Transaction',
+        Disabled    => 0,
+        MaxValues    => 1,
+        Description => 'Arcsight XML Event Data',
+    }, #}}}
+);
+
+for my $cf (@CustomFields) {
+    push @ACL, (
+        { GroupId => 'DutyTeam',
+          GroupDomain => 'UserDefined',
+          CF => $cf->{Name},
+          Queue => $cf->{Queue},
+          Right => 'SeeCustomField', },
+        { GroupId => 'DutyTeam',
+          GroupDomain => 'UserDefined',
+          CF => $cf->{Name},
+          Queue => $cf->{Queue},
+          Right => 'ModifyCustomField', },
+    );
+}
+
+1;
